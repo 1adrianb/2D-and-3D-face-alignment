@@ -1,5 +1,6 @@
 # Compiled Lua sources
 luac.out
+*.t7
 
 # luarocks build files
 *.src.rock
