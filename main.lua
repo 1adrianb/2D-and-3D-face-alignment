@@ -3,7 +3,6 @@ require 'nn'
 require 'nngraph'
 require 'paths'
 
-require 'gnuplot'
 require 'image'
 require 'xlua'
 local utils = require 'utils'
@@ -43,7 +42,7 @@ for i = 1, #fileList do
     local preds_hm, preds_img = utils.getPreds(output, fileList[i].center, fileList[i].scale)
 
     if opts.mode == 'demo' then
-        utils.plot(fileList[i].image, preds_img:view(68,2),torch.Tensor{originalSize[3],originalSize[2]})
+        utils.plot(img, preds_hm:view(68,2))
         io.read()
     end
 
@@ -52,8 +51,6 @@ for i = 1, #fileList do
         xlua.progress(i,#fileList)
     end
 end
-
-if opts.mode == 'demo' then gnuplot.closeall() end
 
 if opts.mode == 'eval' then
     predictions = torch.cat(predictions,1)

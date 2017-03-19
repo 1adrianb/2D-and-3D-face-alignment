@@ -1,3 +1,11 @@
+local py = require 'fb.python' -- Required for plotting
+
+-- Import python libraries and set pairs
+py.exec([=[
+import numpy as np
+import matplotlib.pyplot as plt
+]=])
+
 local utils = {}
 
 function utils.getTransform(center, scale, res)
@@ -95,7 +103,7 @@ function utils.shuffleLR(opts, x)
     end
 
     local matched_parts = {
-			{1,17},   {2,16},   {3,15},
+			{1,17},{2,16},{3,15},
             {4,14}, {5,13}, {6,12}, {7,11}, {8,10},
             {18,27},{19,26},{20,25},{21,24},{22,23},
             {37,46},{38,45},{39,44},{40,43},
@@ -212,28 +220,22 @@ local function subrange(t, first, last)
   return sub
 end
 
--- Requires gnuplot
-function utils.plot(surface, points, size)
-	if points:nDimension()~=2 then
-		points = points:view(points:size(2),2)
-	end
-	
-    gnuplot.figure(1)
-    gnuplot.raw("set size ratio -1")
-	gnuplot.raw("set xrange [0:"..size[1].."]")
-	gnuplot.raw("set yrange [0:"..size[2].."]")
-    gnuplot.raw("unset key; unset tics; unset border;")
-	gnuplot.raw("set multiplot layout 1,1 margins 0.05,0.95,.1,.99 spacing 0,0")
-    local extname = paths.extname(surface)    
-gnuplot.raw("plot '"..surface.."' binary filetype="..extname.." with rgbimage")  
+-- Requires fb.python
+function utils.plot(surface, points)
+py.exec([=[
+plt.imshow(input.swapaxes(0,1).swapaxes(1,2))
+plt.plot(preds[0:17,0],preds[0:17,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[17:22,0],preds[17:22,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[22:27,0],preds[22:27,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[27:31,0],preds[27:31,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[31:36,0],preds[31:36,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[36:42,0],preds[36:42,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[42:48,0],preds[42:48,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+plt.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
 
-	gnuplot.raw(" set yrange ["..size[2]..":0] ") 
-	
-	local x = points[{{},{1}}]:contiguous():view(68)
-	local y = points[{{},{2}}]:contiguous():view(68)
-
-	gnuplot.plot(x, y, '+')
-	gnuplot.raw("unset multiplot")
+plt.show()
+]=],{input=surface:float(), preds = points})	
 end
 
 function utils.readpts(file_path)
