@@ -1,6 +1,6 @@
 # How far are we from solving the 2D \& 3D Face Alignment problem? (and a dataset of 230,000 3D facial landmarks)
 
-This repository implements a demo of the networks described in "How far are we from solving the 2D \& 3D Face Alignment problem? (and a dataset of 230,000 3D facial landmarks)" paper. Please read bellow or visit [our](https://www.adrianbulat.com) webpage for instructions on how to run the code and access the datasets.
+This repository implements a demo of the networks described in "How far are we from solving the 2D \& 3D Face Alignment problem? (and a dataset of 230,000 3D facial landmarks)" paper. Please visit [our](https://www.adrianbulat.com) webpage or read bellow for instructions on how to run the code and access the dataset.
 
 ## Requirments
 - Install the latest [Torch7](http://torch.ch/docs/getting-started.html) version (for Windows, please follow the instructions available [here](https://github.com/torch/distro/blob/master/win-files/README.md))
@@ -38,7 +38,16 @@ th main.lua --help
 
 ## Pretrained models
 
-## Databases
+[2D-FAN](https://www.adrianbulat.com/html/downloads/FaceAlignment/2D-FAN-300W.t7) - trained on 300W-LP and finetuned on iBUG training set.
+
+[3D-FAN](https://www.adrianbulat.com/html/downloads/FaceAlignment/3D-FAN.t7) - trained on 300W-LP
+
+More pretrained models will be added soon.
+
+## Dataset
+
+You can download the annotations alongside the images used by visiting [our page](https://www.adrianbulat.com/face-alignment). 
+
 
 
 

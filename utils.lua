@@ -93,7 +93,7 @@ function utils.getPreds(heatmaps, center, scale)
     return preds, preds_orig
 end
 
-function utils.shuffleLR(opts, x)
+function utils.shuffleLR(x)
     local dim
     if x:nDimension() == 4 then
         dim = 2
@@ -143,11 +143,7 @@ function utils.calcDistance(predictions,groundTruth)
   -- Calculate L2
 	for i = 1,predictions:size(1) do
 		for j = 1,predictions:size(2) do
-			if gnds[i][j][1] > 1 and gnds[i][j][2] > 1 then
-				dists[j][i] = torch.dist(gnds[i][j],predictions[i][j])/groundTruth[i].headSize
-			else
-				dists[j][i] = -1
-			end
+			dists[j][i] = torch.dist(gnds[i][j],predictions[i][j])/groundTruth[i].bbox_size
 		end
 	end
 
@@ -164,60 +160,14 @@ function table.copy(t)
    return setmetatable(u, getmetatable(t))
 end
 
--- originally created in torch dp package, by nicholas leonard
-function torch.swapaxes(tensor, new_axes)
-
-   -- new_axes : A table that give new axes of tensor, 
-   -- example: to swap axes 2 and 3 in 3D tensor of original axes = {1,2,3}, 
-   -- then new_axes={1,3,2}
- 
-   local sorted_axes = table.copy(new_axes)
-   table.sort(sorted_axes)
-   
-   for k, v in ipairs(sorted_axes) do
-      assert(k == v, 'Error: new_axes does not contain all the new axis values')
-   end       
-
-   -- tracker is used to track if a dim in new_axes has been swapped
-   local tracker = torch.zeros(#new_axes)   
-   local new_tensor = tensor
-
-   -- set off a chain swapping of a group of intraconnected dimensions
-   _chain_swap = function(idx)
-      -- if the new_axes[idx] has not been swapped yet
-      if tracker[new_axes[idx]] ~= 1 then
-         tracker[idx] = 1
-         new_tensor = new_tensor:transpose(idx, new_axes[idx])
-         return _chain_swap(new_axes[idx])
-      else
-         return new_tensor
-      end    
-   end
-   
-   for idx = 1, #new_axes do
-      if idx ~= new_axes[idx] and tracker[idx] ~= 1 then
-         new_tensor = _chain_swap(idx)
-      end
-   end
-   
-   return new_tensor
-end
-
 function utils.bounding_box(iterable)
     local mins = torch.min(iterable, 1):view(2)
     local maxs = torch.max(iterable, 1):view(2)
 
-	local center = torch.FloatTensor{maxs[1]-(maxs[1]-mins[1])/2, maxs[2]-(maxs[2]-mins[2])/2}
-    
-	return center, (maxs[1]-mins[1]+maxs[2]-mins[2])/190 --center and scale
-end
+    local center = torch.FloatTensor{maxs[1]-(maxs[1]-mins[1])/2, maxs[2]-(maxs[2]-mins[2])/2}
+    center[2] =center[2]-((maxs[2]-mins[2])*0.12)
 
-local function subrange(t, first, last)
-  local sub = {}
-  for i=first,last do
-    sub[#sub + 1] = t[i]
-  end
-  return sub
+    return center, (maxs[1]-mins[1]+maxs[2]-mins[2])/195, math.sqrt((maxs[1]-mins[1])*(maxs[2]-mins[2])) --center, scale, normby
 end
 
 -- Requires fb.python
@@ -235,7 +185,7 @@ plt.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',col
 plt.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
 
 plt.show()
-]=],{input=surface:float(), preds = points})	
+]=],{input=surface:float():view(3,256,256), preds = points})	
 end
 
 function utils.readpts(file_path)
@@ -268,17 +218,44 @@ function utils.getFileList(opts)
         end
         if pts ~= nil then
             local data_pts = {}
-            local center, scale = utils.bounding_box(pts)
+            local center, scale, normby = utils.bounding_box(pts)
             data_pts.image = data_path..f
             data_pts.scale = scale
             data_pts.center = center
             data_pts.points = pts
+            data_pts.bbox_size = normby
 
             filesList[#filesList+1] = data_pts
         end
     end
     print('Found '..#filesList..' images')
     return filesList
+end
+
+function utils.calculateMetrics(dists)
+local errors = torch.mean(dists,1):view(dists:size(2))
+py.exec([=[
+axes1 = np.linspace(0,1,1000)
+axes2 = np.zeros(1000)
+print(errors.shape[0])
+for i in range(1000):
+    axes2[i] = (errors<axes1[i]).sum()/float(errors.shape[0])
+
+plt.xlim(0,7)
+plt.ylim(0,100)
+plt.yticks(np.arange(0,110,10))
+plt.xticks(np.arange(0,8,1))
+
+plt.grid()
+plt.title('NME (%)', fontsize=20)
+plt.xlabel('NME (%)', fontsize=16)
+plt.ylabel('Test Images (%)', fontsize=16)
+plt.plot(axes1*100,axes2*100,'b-',label='FAN (Ours)',lw=3)
+plt.legend(loc=4, fontsize=16)
+
+plt.show()
+print('AUC: ',np.sum(axes2[:70])/70)
+]=],{errors = errors})
 end
 
 return utils
