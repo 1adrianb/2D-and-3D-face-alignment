@@ -14,7 +14,7 @@ This repository implements a demo of the networks described in "How far are we f
 - [xlua](https://github.com/torch/xlua)
 - [image](https://github.com/torch/image)
 - [paths](https://github.com/torch/paths)
-- [fp.python](https://github.com/facebook/fblualib/blob/master/fblualib/python/README.md)
+- [fb.python](https://github.com/facebook/fblualib/blob/master/fblualib/python/README.md)
 
 ## Setup
 Clone the github repository and install all the dependencies mentiones above.
@@ -38,9 +38,9 @@ th main.lua --help
 
 ## Pretrained models
 
-[2D-FAN](https://www.adrianbulat.com/html/downloads/FaceAlignment/2D-FAN-300W.t7) - trained on 300W-LP and finetuned on iBUG training set.
+[2D-FAN](https://www.adrianbulat.com/downloads/FaceAlignment/2D-FAN-300W.t7) - trained on 300W-LP and finetuned on iBUG training set.
 
-[3D-FAN](https://www.adrianbulat.com/html/downloads/FaceAlignment/3D-FAN.t7) - trained on 300W-LP
+[3D-FAN](https://www.adrianbulat.com/downloads/FaceAlignment/3D-FAN.t7) - trained on 300W-LP
 
 More pretrained models will be added soon.
 

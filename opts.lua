@@ -9,6 +9,7 @@ local function parse( arg )
     -- Options
     cmd:option('-mode', 'demo', 'Options: demo | eval')
     cmd:option('-type', '2D','Options: 2D | 3D')
+    cmd:option('-model', 'models/2D-FAN.t7','Path to the t7 model')
     cmd:option('-path',  'dataset/LS3D-W', 'Path to the dataset.')
     cmd:option('-device', 'cuda', 'Options: cpu, gpu')
 

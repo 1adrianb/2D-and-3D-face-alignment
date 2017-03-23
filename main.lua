@@ -19,12 +19,7 @@ torch.setnumthreads(1)
 local fileList = utils.getFileList(opts)
 local predictions = {}
 
-local model
-if opts.type == '2D' then 
-    model = torch.load('models/2D-FAN.t7')
-else
-    model = torch.load('models/3D-FAN.t7')
-end
+local model = torch.load(opts.model)
 
 if opts.device == 'gpu' then model = model:cuda() end
 model:evaluate()
