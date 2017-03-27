@@ -42,7 +42,7 @@ th main.lua --help
 
 [3D-FAN](https://www.adrianbulat.com/downloads/FaceAlignment/3D-FAN.t7) - trained on 300W-LP
 
-More pretrained models will be added soon.
+[2D-to-3D-FAN](https://www.adrianbulat.com/downloads/FaceAlignment/2D-to-3D-FAN.tar.gz) - trained on 300W-LP
 
 ## Dataset
 
