@@ -2,6 +2,8 @@
 
 This repository implements a demo of the networks described in "How far are we from solving the 2D \& 3D Face Alignment problem? (and a dataset of 230,000 3D facial landmarks)" paper. Please visit [our](https://www.adrianbulat.com) webpage or read bellow for instructions on how to run the code and access the dataset.
 
+Note: If you are interested in a binarized version, capable of running on devices with limited resources please also check https://github.com/1adrianb/binary-face-alignment for a demo.
+
 ## Requirments
 - Install the latest [Torch7](http://torch.ch/docs/getting-started.html) version (for Windows, please follow the instructions available [here](https://github.com/torch/distro/blob/master/win-files/README.md))
 - Install python 2.7.x
