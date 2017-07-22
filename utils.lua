@@ -160,6 +160,15 @@ function table.copy(t)
    return setmetatable(u, getmetatable(t))
 end
 
+function utils.get_normalisation(bbox)
+    local minX, minY, maxX, maxY = unpack(bbox:totable())
+    
+    local center = torch.FloatTensor{maxX-(maxX-minX)/2, maxY-(maxY-minY)/2}
+    center[2] =center[2]-((maxY-minY)*0.12)
+    
+    return center, (maxX-minY+maxY-minY)/195, math.sqrt((maxX-minX)*(maxY-minY))
+end
+
 function utils.bounding_box(iterable)
     local mins = torch.min(iterable, 1):view(2)
     local maxs = torch.max(iterable, 1):view(2)
@@ -226,6 +235,13 @@ function utils.getFileList(opts)
             data_pts.bbox_size = normby
 
             filesList[#filesList+1] = data_pts
+	elseif paths.filep(data_path..f:sub(1,#f-4)..'_bb.t7') then -- TODO: Improve this
+	    local center, scale, normby = utils.get_normalisation(torch.load(data_path..f:sub(1,#f-4)..'_bb.t7')) -- minX, minY, maxX, maxY
+	    data_pts.image = data_path..f
+            data_pts.scale = scale
+            data_pts.center = center
+            data_pts.points = torch.zeros(68,2) -- holder for pts
+            data_pts.bbox_size = normby	    
         end
     end
     print('Found '..#filesList..' images')
