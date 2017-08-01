@@ -35,8 +35,6 @@ git  clone https://github.com/1adrianb/2D-and-3D-face-alignment
 cd 2D-and-3D-face-alignment
 ```
 
-alternatively, we also offer a pre-configured Dockerfile.
-
 ## Usage
 
 In order to run the demo please download the required models available bellow and the associated data.
