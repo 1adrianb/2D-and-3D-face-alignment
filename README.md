@@ -59,7 +59,7 @@ th main.lua --help
 
 [2D-to-3D-FAN](https://www.adrianbulat.com/downloads/FaceAlignment/2D-to-3D-FAN.tar.gz) - trained on 300W-LP
 
-[3D-FAN-depth](https://www.adrianbulat.com/doenalods/FaceAlignment/3D-FAN-depth.t7) - trained on 300W-LP
+[3D-FAN-depth](https://www.adrianbulat.com/downloads/FaceAlignment/3D-FAN-depth.t7) - trained on 300W-LP
 
 ## Citation
 
