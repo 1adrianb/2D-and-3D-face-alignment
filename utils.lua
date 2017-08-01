@@ -3,10 +3,33 @@ local py = require 'fb.python' -- Required for plotting
 -- Import python libraries and set pairs
 py.exec([=[
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 ]=])
 
 local utils = {}
+
+function utils.drawGaussian(img, pt, sigma)
+    -- Check that any part of the gaussian is in-bounds
+    local ul = {math.floor(pt[1] - 3 * sigma), math.floor(pt[2] - 3 * sigma)}
+    local br = {math.floor(pt[1] + 3 * sigma), math.floor(pt[2] + 3 * sigma)}
+    -- If not, return the image as is
+    if (ul[1] > img:size(2) or ul[2] > img:size(1) or br[1] < 1 or br[2] < 1) then return img end
+    -- Generate gaussian
+    local size = 6 * sigma + 1
+    local g = image.gaussian(size):float()
+    
+    -- Usable gaussian range
+    local g_x = {math.max(1, -ul[1]), math.min(br[1], img:size(2)) - math.max(1, ul[1]) + math.max(1, -ul[1])}
+    local g_y = {math.max(1, -ul[2]), math.min(br[2], img:size(1)) - math.max(1, ul[2]) + math.max(1, -ul[2])}
+    -- Image range
+    local img_x = {math.max(1, ul[1]), math.min(br[1], img:size(2))}
+    local img_y = {math.max(1, ul[2]), math.min(br[2], img:size(1))}
+    assert(g_x[1] > 0 and g_y[1] > 0)
+    img:sub(img_y[1], img_y[2], img_x[1], img_x[2]):add(g:sub(g_y[1], g_y[2], g_x[1], g_x[2]))
+    img[img:gt(1)] = 1
+    return img
+end
 
 function utils.getTransform(center, scale, res)
 	local h = 200*scale
@@ -131,7 +154,6 @@ function utils.flip(x)
     return y:typeAs(x)
 end
 
-
 function utils.calcDistance(predictions,groundTruth)
   local n = predictions:size()[1]
   gnds = torch.Tensor(n,68,2)
@@ -182,18 +204,49 @@ end
 -- Requires fb.python
 function utils.plot(surface, points)
 py.exec([=[
-plt.imshow(input.swapaxes(0,1).swapaxes(1,2))
-plt.plot(preds[0:17,0],preds[0:17,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[17:22,0],preds[17:22,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[22:27,0],preds[22:27,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[27:31,0],preds[27:31,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[31:36,0],preds[31:36,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[36:42,0],preds[36:42,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[42:48,0],preds[42:48,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-plt.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+if preds.shape[1]==2:
+    plt.imshow(input.swapaxes(0,1).swapaxes(1,2))
+    plt.plot(preds[0:17,0],preds[0:17,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[17:22,0],preds[17:22,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[22:27,0],preds[22:27,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[27:31,0],preds[27:31,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[31:36,0],preds[31:36,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[36:42,0],preds[36:42,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[42:48,0],preds[42:48,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    plt.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
 
-plt.show()
+    plt.show()
+elif preds.shape[1]==3:
+    fig = plt.figure(figsize=plt.figaspect(.5))
+    ax = fig.add_subplot(1, 2, 1)
+    ax.imshow(input.swapaxes(0,1).swapaxes(1,2))
+    ax.plot(preds[0:17,0],preds[0:17,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[17:22,0],preds[17:22,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[22:27,0],preds[22:27,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[27:31,0],preds[27:31,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[31:36,0],preds[31:36,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[36:42,0],preds[36:42,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[42:48,0],preds[42:48,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2) 
+    ax.axis('off')
+
+    ax = fig.add_subplot(1, 2, 2, projection='3d')
+    surf = ax.scatter(preds[:,0]*1.2,preds[:,1],preds[:,2],c="cyan", alpha=1.0, edgecolor='b')
+    ax.plot3D(preds[:17,0]*1.2,preds[:17,1], preds[:17,2], color='blue' )
+    ax.plot3D(preds[17:22,0]*1.2,preds[17:22,1],preds[17:22,2], color='blue')
+    ax.plot3D(preds[22:27,0]*1.2,preds[22:27,1],preds[22:27,2], color='blue')
+    ax.plot3D(preds[27:31,0]*1.2,preds[27:31,1],preds[27:31,2], color='blue')
+    ax.plot3D(preds[31:36,0]*1.2,preds[31:36,1],preds[31:36,2], color='blue')
+    ax.plot3D(preds[36:42,0]*1.2,preds[36:42,1],preds[36:42,2], color='blue')
+    ax.plot3D(preds[42:48,0]*1.2,preds[42:48,1],preds[42:48,2], color='blue')
+    ax.plot3D(preds[48:,0]*1.2,preds[48:,1],preds[48:,2], color='blue' )
+    
+    ax.view_init(elev=90., azim=90.)
+    ax.set_xlim(ax.get_xlim()[::-1])
+    plt.show()
+
 ]=],{input=surface:float():view(3,256,256), preds = points})	
 end
 
@@ -212,19 +265,28 @@ function utils.readpts(file_path)
 	return pts
 end
 
+function utils.loadUnkownFile(filePath)
+    local fileData = nil
+    if paths.filep(filePath..'.t7') then
+        fileData = torch.load(filePath..'.t7')
+    elseif paths.filep(filePath..'.mat') then
+        fileData = matio.load(filePath..'.mat')
+    elseif paths.filep(filePath..'.npy') then
+        fileData = npy4th.loadnpy(filePath..'.npy')
+    elseif paths.filep(filePath..'.pts') then
+        fileData = utils.readpts(filePath..'.pts')
+    end
+    return fileData
+end
+
 function utils.getFileList(opts)
     print('Scanning directory for data...')
-    local data_path = opts.path
+    local data_path = opts.input
     local filesList = {}
     for f in paths.files(data_path, function (file) return file:find('.jpg') or file:find('.png') end) do
-        -- Check if we have .t7 or .pts file
-        local pts = nil
-        if paths.filep(data_path..f:sub(1,#f-4)..'.t7') then
-            pts = torch.load(data_path..f:sub(1,#f-4)..'.t7')
-        end
-        if paths.filep(data_path..f:sub(1,#f-4)..'.pts') then
-           pts = utils.readpts(data_path..f:sub(1,#f-4)..'.pts')
-        end
+        -- Check if we have .t7, .mat, .npy or .pts file
+        local pts = utils.loadUnkownFile(data_path..f:sub(1,#f-4))
+
         if pts ~= nil then
             local data_pts = {}
             local center, scale, normby = utils.bounding_box(pts)
@@ -235,13 +297,17 @@ function utils.getFileList(opts)
             data_pts.bbox_size = normby
 
             filesList[#filesList+1] = data_pts
-	elseif paths.filep(data_path..f:sub(1,#f-4)..'_bb.t7') then -- TODO: Improve this
-	    local center, scale, normby = utils.get_normalisation(torch.load(data_path..f:sub(1,#f-4)..'_bb.t7')) -- minX, minY, maxX, maxY
-	    data_pts.image = data_path..f
+
+	    elseif paths.filep(data_path..f:sub(1,#f-4)..'_bb.t7') then -- TODO: Improve this
+            local bdBox = utils.loadUnkownFile(data_path..f:sub(1,#f-4)..'_bb') -- minX, minY, maxX, maxY
+            local center, scale, normby = utils.get_normalisation(bdBox) 
+            data_pts.image = data_path..f
             data_pts.scale = scale
             data_pts.center = center
             data_pts.points = torch.zeros(68,2) -- holder for pts
-            data_pts.bbox_size = normby	    
+            data_pts.bbox_size = normby
+
+            filesList[#filesList+1] = data_pts
         end
     end
     print('Found '..#filesList..' images')
