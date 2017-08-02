@@ -19,6 +19,7 @@ Note: If you are interested in a binarized version, capable of running on device
 
 - [cutorch](https://github.com/torch/cutorch)
 - [nn](https://github.com/torch/nn)
+- [cunn](https://github.com/torch/cunn)
 - [nngraph](https://github.com/torch/nngraph)
 - [cudnn](https://github.com/soumith/cudnn.torch)
 - [xlua](https://github.com/torch/xlua)
