@@ -16,8 +16,8 @@ local function parse( arg )
 
     -- Data options
     cmd:option('-save', 'true', 'Save predictions in the folder specified as output')
-    cmd:option('-input',  'dataset/LS3D-W', 'Path to the dataset.')
-    cmd:option('-output',  'dataset/LS3D-W', 'Path where to save the predictions.')
+    cmd:option('-input',  'dataset/LS3D-W/', 'Path to the dataset.')
+    cmd:option('-output',  'dataset/LS3D-W/out/', 'Path where to save the predictions.')
     cmd:option('-device', 'cuda', 'Options: cpu, gpu')
 
     cmd:text()
