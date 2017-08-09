@@ -15,7 +15,7 @@ Note: If you are interested in a binarized version, capable of running on device
 - Install the latest [Torch7](http://torch.ch/docs/getting-started.html) version (for Windows, please follow the instructions available [here](https://github.com/torch/distro/blob/master/win-files/README.md))
 - Install python 2.7.x
 
-### Packages
+### Lua packages
 
 - [cutorch](https://github.com/torch/cutorch)
 - [nn](https://github.com/torch/nn)
@@ -26,6 +26,11 @@ Note: If you are interested in a binarized version, capable of running on device
 - [image](https://github.com/torch/image)
 - [paths](https://github.com/torch/paths)
 - [fb.python](https://github.com/facebook/fblualib/blob/master/fblualib/python/README.md)
+
+### Python packages
+- [numpy](http://www.numpy.org/)
+- [matplotlib](https://matplotlib.org/)
+- [dlib](https://pypi.python.org/pypi/dlib) (required for face detection, if no bbox are provided)
 
 ## Setup
 

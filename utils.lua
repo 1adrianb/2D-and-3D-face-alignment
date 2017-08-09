@@ -113,7 +113,7 @@ function utils.getPreds(heatmaps, center, scale)
             preds_orig[i][j] = utils.transform(preds[i][j],center,scale,heatmaps:size(3),true)
         end
     end
-    return preds, preds_orig
+    return preds, preds_orig+1
 end
 
 function utils.shuffleLR(x)
@@ -188,7 +188,7 @@ function utils.get_normalisation(bbox)
     local center = torch.FloatTensor{maxX-(maxX-minX)/2, maxY-(maxY-minY)/2}
     center[2] =center[2]-((maxY-minY)*0.12)
     
-    return center, (maxX-minY+maxY-minY)/195, math.sqrt((maxX-minX)*(maxY-minY))
+    return center, (math.abs(maxX-minY)+math.abs(maxY-minY))/195, math.sqrt((maxX-minX)*(maxY-minY))
 end
 
 function utils.bounding_box(iterable)
@@ -283,12 +283,13 @@ function utils.getFileList(opts)
     print('Scanning directory for data...')
     local data_path = opts.input
     local filesList = {}
+    local requireDetectionCnt = 0
     for f in paths.files(data_path, function (file) return file:find('.jpg') or file:find('.png') end) do
         -- Check if we have .t7, .mat, .npy or .pts file
         local pts = utils.loadUnkownFile(data_path..f:sub(1,#f-4))
+	local data_pts = {}
 
         if pts ~= nil then
-            local data_pts = {}
             local center, scale, normby = utils.bounding_box(pts)
             data_pts.image = data_path..f
             data_pts.scale = scale
@@ -298,7 +299,7 @@ function utils.getFileList(opts)
 
             filesList[#filesList+1] = data_pts
 
-	    elseif paths.filep(data_path..f:sub(1,#f-4)..'_bb.t7') then -- TODO: Improve this
+	elseif paths.filep(data_path..f:sub(1,#f-4)..'_bb.t7') then -- TODO: Improve this
             local bdBox = utils.loadUnkownFile(data_path..f:sub(1,#f-4)..'_bb') -- minX, minY, maxX, maxY
             local center, scale, normby = utils.get_normalisation(bdBox) 
             data_pts.image = data_path..f
@@ -308,9 +309,16 @@ function utils.getFileList(opts)
             data_pts.bbox_size = normby
 
             filesList[#filesList+1] = data_pts
+        elseif opts.detectFaces then
+            data_pts.image = data_path..f
+            data_pts.points = torch.zeros(68,2)
+
+            filesList[#filesList+1] = data_pts
+            requireDetectionCnt = requireDetectionCnt + 1
         end
     end
     print('Found '..#filesList..' images')
+    print(requireDetectionCnt..' images require a face detector')
     return filesList
 end
 

@@ -9,14 +9,14 @@ local utils = require 'utils'
 local opts = require 'opts'(arg)
 
 -- Load optional libraries
-xrequire('cunn')
-xrequire('cudnn')
-
-require 'cudnn'
+require('cunn')
+require('cudnn')
 
 -- Load optional data-loading libraries
 xrequire('matio') -- matlab
 npy4th = xrequire('npy4th') -- python numpy
+
+local FaceDetector = require 'facedetection_dlib'
 
 torch.setheaptracking(true)
 torch.setdefaulttensortype('torch.FloatTensor')
@@ -24,6 +24,8 @@ torch.setnumthreads(1)
 
 local fileList = utils.getFileList(opts)
 local predictions = {}
+
+local faceDetector = FaceDetector()
 
 local model = torch.load(opts.model)
 local modelZ
@@ -42,6 +44,14 @@ for i = 1, #fileList do
         img = torch.repeatTensor(img,3,1,1)
     end
     originalSize = img:size()
+   
+    -- Detect faces, if needed
+    if fileList[i].scale == nil then
+        local detectedFaces = faceDetector:detect(img)
+	if(#detectedFaces<1) then goto continue end -- When continue is missing
+	-- Compute only for the first face for now
+        fileList[i].center, fileList[i].scale =	utils.get_normalisation(detectedFaces[1])
+    end
     
     img = utils.crop(img, fileList[i].center, fileList[i].scale, 256):view(1,3,256,256)
     if opts.device ~= 'cpu' then img = img:cuda() end
@@ -76,9 +86,10 @@ for i = 1, #fileList do
     end
 
     if opts.mode == 'eval' then
-        predictions[i] = preds_img:clone()+1.75
+        predictions[i] = preds_img:clone() + 1.75
         xlua.progress(i,#fileList)
     end
+    ::continue::
 end
 
 if opts.mode == 'eval' then
