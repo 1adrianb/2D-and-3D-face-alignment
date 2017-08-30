@@ -46,11 +46,13 @@ for i = 1, #fileList do
     originalSize = img:size()
    
     -- Detect faces, if needed
+    local detectedFaces, detectedFace
     if fileList[i].scale == nil then
-        local detectedFaces = faceDetector:detect(img)
+        detectedFaces = faceDetector:detect(img)
 	if(#detectedFaces<1) then goto continue end -- When continue is missing
 	-- Compute only for the first face for now
         fileList[i].center, fileList[i].scale =	utils.get_normalisation(detectedFaces[1])
+        detectedFace = detectedFaces[1]
     end
     
     img = utils.crop(img, fileList[i].center, fileList[i].scale, 256):view(1,3,256,256)
@@ -78,7 +80,14 @@ for i = 1, #fileList do
     end
 
     if opts.mode == 'demo' then
-        utils.plot(img, preds_hm)
+        -- Converting it to the predicted space (for plotting)
+        detectedFace[{{3,4}}] = utils.transform(torch.Tensor({detectedFace[3],detectedFace[4]}), fileList[i].center, fileList[i].scale, 256)
+        detectedFace[{{1,2}}] = utils.transform(torch.Tensor({detectedFace[1],detectedFace[2]}), fileList[i].center, fileList[i].scale, 256)
+
+        detectedFace[3] = detectedFace[3]-detectedFace[1]
+        detectedFace[4] = detectedFace[4]-detectedFace[2]
+        
+        utils.plot(img, preds_hm, detectedFace)
     end
 
     if opts.save then

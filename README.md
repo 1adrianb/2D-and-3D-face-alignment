@@ -32,6 +32,8 @@ Note: If you are interested in a binarized version, capable of running on device
 - [matplotlib](https://matplotlib.org/)
 - [dlib](https://pypi.python.org/pypi/dlib) (required for face detection, if no bbox are provided)
 
+Please note that dlib performs poorly for faces found in challenging poses or difficult lighting conditions and it's provided only as a simple demo. For optimal performance we recommend using other deeplearning based face detection methods.
+
 ## Setup
 
 Clone the github repository and install all the dependencies mentiones above.

@@ -1,10 +1,11 @@
 local py = require 'fb.python' -- Required for plotting
 
--- Import python libraries and set pairs
+-- Import python libraries
 py.exec([=[
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 ]=])
 
 local utils = {}
@@ -188,7 +189,7 @@ function utils.get_normalisation(bbox)
     local center = torch.FloatTensor{maxX-(maxX-minX)/2, maxY-(maxY-minY)/2}
     center[2] =center[2]-((maxY-minY)*0.12)
     
-    return center, (math.abs(maxX-minY)+math.abs(maxY-minY))/195, math.sqrt((maxX-minX)*(maxY-minY))
+    return center, (math.abs(maxX-minX)+math.abs(maxY-minY))/195, math.sqrt((maxX-minX)*(maxY-minY))
 end
 
 function utils.bounding_box(iterable)
@@ -202,19 +203,32 @@ function utils.bounding_box(iterable)
 end
 
 -- Requires fb.python
-function utils.plot(surface, points)
+function utils.plot(surface, points, detectedFace)
 py.exec([=[
 if preds.shape[1]==2:
-    plt.imshow(input.swapaxes(0,1).swapaxes(1,2))
-    plt.plot(preds[0:17,0],preds[0:17,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[17:22,0],preds[17:22,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[22:27,0],preds[22:27,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[27:31,0],preds[27:31,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[31:36,0],preds[31:36,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[36:42,0],preds[36:42,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[42:48,0],preds[42:48,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
-    plt.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.imshow(input.swapaxes(0,1).swapaxes(1,2))
+    ax.plot(preds[0:17,0],preds[0:17,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[17:22,0],preds[17:22,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[22:27,0],preds[22:27,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[27:31,0],preds[27:31,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[31:36,0],preds[31:36,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[36:42,0],preds[36:42,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[42:48,0],preds[42:48,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+    ax.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
+
+    if detected_face is not None:
+        ax.add_patch(
+            patches.Rectangle(
+                (detected_face[0], detected_face[1]),
+                detected_face[2],
+                detected_face[3],
+                fill=False,
+                edgecolor="red"
+            )
+        )
 
     plt.show()
 elif preds.shape[1]==3:
@@ -232,6 +246,17 @@ elif preds.shape[1]==3:
     ax.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2) 
     ax.axis('off')
 
+    if detected_face is not None:
+        ax.add_patch(
+            patches.Rectangle(
+                (detected_face[0], detected_face[1]),
+                detected_face[2],
+                detected_face[3],
+                fill=False,
+                edgecolor="red"
+            )
+        )
+
     ax = fig.add_subplot(1, 2, 2, projection='3d')
     surf = ax.scatter(preds[:,0]*1.2,preds[:,1],preds[:,2],c="cyan", alpha=1.0, edgecolor='b')
     ax.plot3D(preds[:17,0]*1.2,preds[:17,1], preds[:17,2], color='blue' )
@@ -247,7 +272,7 @@ elif preds.shape[1]==3:
     ax.set_xlim(ax.get_xlim()[::-1])
     plt.show()
 
-]=],{input=surface:float():view(3,256,256), preds = points})	
+]=],{input=surface:float():view(3,256,256), preds = points, detected_face = detectedFace})	
 end
 
 function utils.readpts(file_path)
