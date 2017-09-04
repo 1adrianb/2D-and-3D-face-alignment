@@ -29,11 +29,11 @@ function utils.drawGaussian(img, pt, sigma)
     
     -- Usable gaussian range
     local g_x = {math.max(1, 2-ul[1]), math.min(size, size + (width - br[1]))}
-	local g_y = {math.max(1, 2-ul[2]), math.min(size, size + (height - br[2]))}
+    local g_y = {math.max(1, 2-ul[2]), math.min(size, size + (height - br[2]))}
 
     -- Image range
-	local img_x = {math.max(1, ul[1]), math.min(br[1], width)}
-	local img_y = {math.max(1, ul[2]), math.min(br[2], height)}
+    local img_x = {math.max(1, ul[1]), math.min(br[1], width)}
+    local img_y = {math.max(1, ul[2]), math.min(br[2], height)}
     
     img:sub(img_y[1], img_y[2], img_x[1], img_x[2]):cmax(g:sub(g_y[1], g_y[2], g_x[1], g_x[2]))
     return img
