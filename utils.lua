@@ -10,41 +10,33 @@ import matplotlib.patches as patches
 
 local utils = {}
 
+local buffer = {}
 function utils.drawGaussian(img, pt, sigma)
+    local height, width = img:size(1), img:size(2)
+
     -- Check that any part of the gaussian is in-bounds
     local ul = {math.floor(pt[1] - 3 * sigma), math.floor(pt[2] - 3 * sigma)}
     local br = {math.floor(pt[1] + 3 * sigma), math.floor(pt[2] + 3 * sigma)}
     -- If not, return the image as is
-    if (ul[1] > img:size(2) or ul[2] > img:size(1) or br[1] < 1 or br[2] < 1) then return img end
+    if (ul[1] > width or ul[2] > height or br[1] < 1 or br[2] < 1) then return img end
     -- Generate gaussian
     local size = 6 * sigma + 1
-    local g = image.gaussian(size):float()
+
+    if not buffer[size] then
+        buffer[size] = image.gaussian(size):float()
+    end
+    local g = buffer[size]
     
     -- Usable gaussian range
-    local g_x = {math.max(1, -ul[1]), math.min(br[1], img:size(2)) - math.max(1, ul[1]) + math.max(1, -ul[1])}
-    local g_y = {math.max(1, -ul[2]), math.min(br[2], img:size(1)) - math.max(1, ul[2]) + math.max(1, -ul[2])}
+    local g_x = {math.max(1, 2-ul[1]), math.min(size, size + (width - br[1]))}
+	local g_y = {math.max(1, 2-ul[2]), math.min(size, size + (height - br[2]))}
+
     -- Image range
-    local img_x = {math.max(1, ul[1]), math.min(br[1], img:size(2))}
-    local img_y = {math.max(1, ul[2]), math.min(br[2], img:size(1))}
-    assert(g_x[1] > 0 and g_y[1] > 0)
-    img:sub(img_y[1], img_y[2], img_x[1], img_x[2]):add(g:sub(g_y[1], g_y[2], g_x[1], g_x[2]))
-    img[img:gt(1)] = 1
+	local img_x = {math.max(1, ul[1]), math.min(br[1], width)}
+	local img_y = {math.max(1, ul[2]), math.min(br[2], height)}
+    
+    img:sub(img_y[1], img_y[2], img_x[1], img_x[2]):cmax(g:sub(g_y[1], g_y[2], g_x[1], g_x[2]))
     return img
-end
-
-function utils.getTransform(center, scale, res)
-	local h = 200*scale
-	local t = torch.eye(3)
-	
-	-- Scale
-	t[1][1] = res/h
-	t[2][2] = res/h
-	
-	-- Translate
-	t[1][3] = res*(-center[1]/h+0.5)
-	t[2][3] = res*(-center[2]/h+0.5)
-
-	return t
 end
 
 -- Transform the coordinates from the original image space to the cropped one
@@ -52,7 +44,12 @@ function utils.transform(pt, center, scale, res, invert)
     -- Define the transformation matrix
     local pt_new = torch.ones(3)
     pt_new[1], pt_new[2] = pt[1], pt[2]
-    local t = utils.getTransform(center, scale, res)
+
+    local h = 200*scale
+    local t = torch.eye(3)
+    t[1][1], t[2][2] = res/h, res/h
+    t[1][3], t[2][3] = res*(-center[1]/h+0.5), res*(-center[2]/h+0.5)
+
     if invert then
         t = torch.inverse(t)
     end
@@ -66,10 +63,6 @@ function utils.crop(img, center, scale, res)
     local l2 = utils.transform({res,res}, center, scale, res, true)
 
     local pad = math.floor(torch.norm((l1 - l2):float())/2 - (l2[1]-l1[1])/2)
-    
-    if img:nDimension() < 3 then
-      img = torch.repeatTensor(img,3,1,1)
-    end
 
     local newDim = torch.IntTensor({img:size(1), l2[2] - l1[2], l2[1] - l1[1]})
     local newImg = torch.zeros(newDim[1],newDim[2],newDim[3])
@@ -118,14 +111,6 @@ function utils.getPreds(heatmaps, center, scale)
 end
 
 function utils.shuffleLR(x)
-    local dim
-    if x:nDimension() == 4 then
-        dim = 2
-    else
-        assert(x:nDimension() == 3)
-        dim = 1
-    end
-
     local matched_parts = {
 			{1,17},{2,16},{3,15},
             {4,14}, {5,13}, {6,12}, {7,11}, {8,10},
@@ -139,9 +124,9 @@ function utils.shuffleLR(x)
 
     for i = 1,#matched_parts do
         local idx1, idx2 = unpack(matched_parts[i])
-        local tmp = x:narrow(dim, idx1, 1):clone()
-        x:narrow(dim, idx1, 1):copy(x:narrow(dim, idx2, 1))
-        x:narrow(dim, idx2, 1):copy(tmp)
+        local tmp = x:narrow(2, idx1, 1):clone()
+        x:narrow(2, idx1, 1):copy(x:narrow(2, idx2, 1))
+        x:narrow(2, idx2, 1):copy(tmp)
     end
 
     return x
@@ -156,21 +141,21 @@ function utils.flip(x)
 end
 
 function utils.calcDistance(predictions,groundTruth)
-  local n = predictions:size()[1]
-  gnds = torch.Tensor(n,68,2)
-  for i=1,n do
-    gnds[{{i},{},{}}] = groundTruth[i].points
-  end
+    local n = predictions:size()[1]
+    gnds = torch.Tensor(n,68,2)
+    for i=1,n do
+        gnds[{{i},{},{}}] = groundTruth[i].points
+    end
 
-  local dists = torch.Tensor(predictions:size(2),predictions:size(1))
-  -- Calculate L2
-	for i = 1,predictions:size(1) do
-		for j = 1,predictions:size(2) do
-			dists[j][i] = torch.dist(gnds[i][j],predictions[i][j])/groundTruth[i].bbox_size
-		end
+    local dists = torch.Tensor(predictions:size(2),predictions:size(1))
+    -- Calculate L2
+    for i = 1,predictions:size(1) do
+        for j = 1,predictions:size(2) do
+            dists[j][i] = torch.dist(gnds[i][j],predictions[i][j])/groundTruth[i].bbox_size
 	end
+    end
 
-  return dists
+    return dists
 end
 
 --http://stackoverflow.com/questions/640642/how-do-you-copy-a-lua-table-by-value

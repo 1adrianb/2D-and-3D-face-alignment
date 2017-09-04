@@ -40,10 +40,10 @@ model:evaluate()
 
 for i = 1, #fileList do
     local img = image.load(fileList[i].image)
+    -- Convert grayscale to pseudo-rgb
     if img:size(1)==1 then
         img = torch.repeatTensor(img,3,1,1)
     end
-    originalSize = img:size()
    
     -- Detect faces, if needed
     local detectedFaces, detectedFace
@@ -76,7 +76,6 @@ for i = 1, #fileList do
         if opts.device ~= 'cpu' then inputZ = inputZ:cuda() end
         local depth_pred = modelZ:forward(inputZ):float():view(68,1) 
         preds_hm = torch.cat(preds_hm, depth_pred, 2)
---        preds_img = torch.cat(preds_img, depth_pred, 2)
     end
 
     if opts.mode == 'demo' then
