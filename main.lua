@@ -90,8 +90,19 @@ for i = 1, #fileList do
     end
 
     if opts.save then
-        torch.save(opts.output..'/'..paths.basename(fileList[i].image, '.'..paths.extname(fileList[i].image))..'.t7', preds_img)
+       local dest = opts.output..'/'..paths.basename(fileList[i].image, '.'..paths.extname(fileList[i].image))
+       if opts.outputFormat == 't7' then
+	   torch.save(dest..'.t7', preds_img)
+       elseif opts.outputFormat == 'txt' then
+	   -- csv without header
+	   local out = torch.DiskFile(dest .. '.txt', 'w')
+	   for i=1,68 do
+	       out:writeString(tostring(preds_img[{1,i,1}]) .. ',' .. tostring(preds_img[{1,i,2}]) .. '\n')
+	   end
+	   out:close()
+       end
     end
+
 
     if opts.mode == 'eval' then
         predictions[i] = preds_img:clone() + 1.75
