@@ -27,6 +27,8 @@ Note: If you are interested in a binarized version, capable of running on device
 - [paths](https://github.com/torch/paths)
 - [fb.python](https://github.com/facebook/fblualib/blob/master/fblualib/python/README.md)
 
+Note: if you are having troubles compiling thpp (required for fb.python) against the latest version of torch7 please use the version available here: https://github.com/1adrianb/thpp
+
 ### Python packages
 - [numpy](http://www.numpy.org/)
 - [matplotlib](https://matplotlib.org/)
