@@ -27,9 +27,10 @@ Note: If you are interested in a binarized version, capable of running on device
 - [paths](https://github.com/torch/paths)
 - [fb.python](https://github.com/facebook/fblualib/blob/master/fblualib/python/README.md)
 
-Note: if you are having troubles compiling thpp (required for fb.python) against the latest version of torch7 please use the version available here: https://github.com/1adrianb/thpp
+Note: if you are having troubles compiling thpp (required for fb.python) against the latest version of torch7 please use the version available here: [https://github.com/1adrianb/thpp](https://github.com/1adrianb/thpp)
 
 ### Python packages
+
 - [numpy](http://www.numpy.org/)
 - [matplotlib](https://matplotlib.org/)
 - [dlib](https://pypi.python.org/pypi/dlib) (required for face detection, if no bbox are provided)
@@ -39,8 +40,8 @@ Please note that dlib performs poorly for faces found in challenging poses or di
 ## Setup
 
 Clone the github repository and install all the dependencies mentiones above.
-```bash
 
+```bash
 git  clone https://github.com/1adrianb/2D-and-3D-face-alignment
 cd 2D-and-3D-face-alignment
 ```
@@ -60,7 +61,8 @@ th main.lua --help
 ```
 
 ## Docker image
-A Dockerfile is provided to build images with cuda support and cudnn v5.1.
+
+For convenience, a Dockerfile is provided to build images with cuda support and cudnn v5.1:
 
 ```bash
 docker build -t facealignment .
@@ -72,7 +74,8 @@ Alternatively you can use the image available on [docker hub](https://hub.docker
 nvidia-docker run -it 1adrianb/facealignment-torch
 ```
 
-In order to keep the image small the images and the models are not included and will have to be downloaded separately.
+In order to keep the image small the data and the models are not included and will have to be downloaded separately.
+
 Docker image based on the [cuda-torch](https://hub.docker.com/r/kaixhin/cuda-torch/) by kaixhin.
 
 ## Pretrained models
