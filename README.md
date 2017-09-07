@@ -59,6 +59,22 @@ In order to see all the available options please run:
 th main.lua --help
 ```
 
+## Docker image
+A Dockerfile is provided to build images with cuda support and cudnn v5.1.
+
+```bash
+docker build -t facealignment .
+```
+
+Alternatively you can use the image available on [docker hub](https://hub.docker.com/r/1adrianb/facealignment-torch/):
+
+```bash
+nvidia-docker run -it 1adrianb/facealignment-torch
+```
+
+In order to keep the image small the images and the models are not included and will have to be downloaded separately.
+Docker image based on the [cuda-torch](https://hub.docker.com/r/kaixhin/cuda-torch/) by kaixhin.
+
 ## Pretrained models
 
 [2D-FAN](https://www.adrianbulat.com/downloads/FaceAlignment/2D-FAN-300W.t7) - trained on 300W-LP and finetuned on iBUG training set.
