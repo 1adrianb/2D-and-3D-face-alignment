@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-dev \
     python-tk
 
+RUN pip install dlib
+
 # Install lua packages
 RUN luarocks install xlua &&\
     luarocks install matio
