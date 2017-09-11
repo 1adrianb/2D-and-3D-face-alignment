@@ -204,7 +204,7 @@ if preds.shape[1]==2:
     ax.plot(preds[48:60,0],preds[48:60,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
     ax.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2)
 
-    if detected_face is not None:
+    if ('detected_face' in vars() or 'detected_face' in globals()) and (detected_face is not None):
         ax.add_patch(
             patches.Rectangle(
                 (detected_face[0], detected_face[1]),
@@ -231,7 +231,7 @@ elif preds.shape[1]==3:
     ax.plot(preds[60:68,0],preds[60:68,1],marker='o',markersize=6,linestyle='-',color='w',lw=2) 
     ax.axis('off')
 
-    if detected_face is not None:
+    if ('detected_face' in vars() or 'detected_face' in globals()) and (detected_face is not None):
         ax.add_patch(
             patches.Rectangle(
                 (detected_face[0], detected_face[1]),
@@ -296,8 +296,8 @@ function utils.getFileList(opts)
     local requireDetectionCnt = 0
     for f in paths.files(data_path, function (file) return file:find('.jpg') or file:find('.png') end) do
         -- Check if we have .t7, .mat, .npy or .pts file
-        local pts = utils.loadUnkownFile(data_path..f:sub(1,#f-4))
-	local data_pts = {}
+        local pts = utils.loadUnkownFile(paths.concat(data_path,f:sub(1,#f-4)))
+	    local data_pts = {}
 
         if pts ~= nil then
             local center, scale, normby = utils.bounding_box(pts)
@@ -329,7 +329,7 @@ function utils.getFileList(opts)
     end
     print('Found '..#filesList..' images')
     print(requireDetectionCnt..' images require a face detector')
-    return filesList
+    return filesList, requireDetectionCnt
 end
 
 function utils.calculateMetrics(dists)

@@ -13,7 +13,7 @@ require('cunn')
 require('cudnn')
 
 -- Load optional data-loading libraries
-xrequire('matio') -- matlab
+matio = xrequire('matio') -- matlab
 npy4th = xrequire('npy4th') -- python numpy
 
 local FaceDetector = require 'facedetection_dlib'
@@ -22,10 +22,11 @@ torch.setheaptracking(true)
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.setnumthreads(1)
 
-local fileList = utils.getFileList(opts)
+local fileList, requireDetectionCnt = utils.getFileList(opts)
 local predictions = {}
 
-local faceDetector = FaceDetector()
+local faceDetector = nil
+if requireDetectionCnt > 0 then faceDetector = FaceDetector() end
 
 local model = torch.load(opts.model)
 local modelZ
@@ -76,31 +77,34 @@ for i = 1, #fileList do
         if opts.device ~= 'cpu' then inputZ = inputZ:cuda() end
         local depth_pred = modelZ:forward(inputZ):float():view(68,1) 
         preds_hm = torch.cat(preds_hm, depth_pred, 2)
+        preds_img = torch.cat(preds_img:view(68,2), depth_pred*(1/(256/(200*fileList[i].scale))),2)
     end
 
     if opts.mode == 'demo' then
-        -- Converting it to the predicted space (for plotting)
-        detectedFace[{{3,4}}] = utils.transform(torch.Tensor({detectedFace[3],detectedFace[4]}), fileList[i].center, fileList[i].scale, 256)
-        detectedFace[{{1,2}}] = utils.transform(torch.Tensor({detectedFace[1],detectedFace[2]}), fileList[i].center, fileList[i].scale, 256)
+        if detectedFace ~= nil then
+            -- Converting it to the predicted space (for plotting)
+            detectedFace[{{3,4}}] = utils.transform(torch.Tensor({detectedFace[3],detectedFace[4]}), fileList[i].center, fileList[i].scale, 256)
+            detectedFace[{{1,2}}] = utils.transform(torch.Tensor({detectedFace[1],detectedFace[2]}), fileList[i].center, fileList[i].scale, 256)
 
-        detectedFace[3] = detectedFace[3]-detectedFace[1]
-        detectedFace[4] = detectedFace[4]-detectedFace[2]
-        
+            detectedFace[3] = detectedFace[3]-detectedFace[1]
+            detectedFace[4] = detectedFace[4]-detectedFace[2]
+        end
         utils.plot(img, preds_hm, detectedFace)
     end
 
     if opts.save then
-       local dest = opts.output..'/'..paths.basename(fileList[i].image, '.'..paths.extname(fileList[i].image))
-       if opts.outputFormat == 't7' then
-	   torch.save(dest..'.t7', preds_img)
-       elseif opts.outputFormat == 'txt' then
-	   -- csv without header
-	   local out = torch.DiskFile(dest .. '.txt', 'w')
-	   for i=1,68 do
-	       out:writeString(tostring(preds_img[{1,i,1}]) .. ',' .. tostring(preds_img[{1,i,2}]) .. '\n')
-	   end
-	   out:close()
-       end
+        local dest = opts.output..'/'..paths.basename(fileList[i].image, '.'..paths.extname(fileList[i].image))
+        if opts.outputFormat == 't7' then
+	        torch.save(dest..'.t7', preds_img)
+        elseif opts.outputFormat == 'txt' then
+	        -- csv without header
+	        local out = torch.DiskFile(dest .. '.txt', 'w')
+	        for i=1,68 do
+	            out:writeString(tostring(preds_img[{1,i,1}]) .. ',' .. tostring(preds_img[{1,i,2}]) .. '\n')
+	        end
+	        out:close()
+        end
+        xlua.progress(i, #fileList)
     end
 
 
