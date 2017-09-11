@@ -100,7 +100,11 @@ for i = 1, #fileList do
 	        -- csv without header
 	        local out = torch.DiskFile(dest .. '.txt', 'w')
 	        for i=1,68 do
-	            out:writeString(tostring(preds_img[{1,i,1}]) .. ',' .. tostring(preds_img[{1,i,2}]) .. '\n')
+                if preds_img:size(2)==3 then
+                    out:writeString(tostring(preds_img[{i,1}]) .. ',' .. tostring(preds_img[{i,2}]) .. ',' .. tostring(preds_img[{i,3}]) .. '\n')
+                else
+	                out:writeString(tostring(preds_img[{i,1}]) .. ',' .. tostring(preds_img[{i,2}]) .. '\n')
+                end
 	        end
 	        out:close()
         end
