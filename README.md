@@ -4,6 +4,8 @@ This repository implements a demo of the networks described in "How far are we f
 
 **Training code: <https://www.github.com/1adrianb/face-alignment-training>**
 
+**:fire: Python code available: <https://www.github.com/1adrianb/face-alignment>**
+
 Note: If you are interested in a binarized version, capable of running on devices with limited resources please also check <https://github.com/1adrianb/binary-face-alignment> for a demo.
 
 <p align='center'>
