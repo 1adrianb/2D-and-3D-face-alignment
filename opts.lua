@@ -20,6 +20,7 @@ local function parse( arg )
     cmd:option('-input',  'dataset/LS3D-W/', 'Path to the dataset.')
     cmd:option('-output',  'dataset/LS3D-W/out/', 'Path where to save the predictions.')
     cmd:option('-device', 'cuda', 'Options: cpu, gpu')
+    cmd:option('-limitedGpuMemory','false', 'if true : swap between loaded 2D/3D models in Gpu to save some space, if 3D-full prediction required')
     cmd:option('-outputFormat', 't7', 'Output format: t7 | txt')
 
     cmd:text()
