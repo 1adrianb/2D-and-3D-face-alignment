@@ -4,6 +4,7 @@ require 'nngraph'
 require 'paths'
 require 'image'
 require 'xlua'
+
 local utils = require 'utils'
 local opts = require 'opts'(arg)
 
@@ -28,15 +29,50 @@ local faceDetector = nil
 if requireDetectionCnt > 0 then faceDetector = FaceDetector() end
 
 
-local model = torch.load(opts.model)
+--creat a cpu copy to clone model from it to gpu if limited gpu option is true
+local cpuMemoryModel = torch.load(opts.model)
+local model
+
+if opts.limitedGpuMemory == 'true' and opts.device == 'gpu' then
+  model = cpuMemoryModel:clone()
+  
+else 
+  model = cpuMemoryModel
+end
+
+--if deveice spcified to be gpu 
 if opts.device == 'gpu' then model = model:cuda() end
+
+
 model:evaluate()
 
 
+--if not limited Gpu memory and 3D-full prediction required then load the 3D depth prediction model to Gpu memory once
+--other wise if limitedGpuMemory is true will load the depth model when needed and swap with th 2D prediction model to save some memory
+
+local modelZ
+local cpuMemoryModelZ
+
+if opts.type == '3D-full' then 
+    
+  cpuMemoryModelZ = torch.load(opts.modelZ)
+  
+  if opts.device == 'gpu' and opts.limitedGpuMemory == 'false' then
+      
+    modelZ = cpuMemoryModelZ
+    modelZ = modelZ:cuda()
+    modelZ:evaluate()
+		
+  elseif opts.device == 'cpu'  then
+  modelZ = cpuMemoryModelZ
+  modelZ:evaluate()
+  end
+end
 
 for i = 1, #fileList do
 
-  print("processing ",fileList[i])
+  collectgarbage()
+  print("processing ",fileList[i].image)
   
   local img = image.load(fileList[i].image)
   
@@ -46,21 +82,22 @@ for i = 1, #fileList do
     img = torch.repeatTensor(img,3,1,1)
   end
    
-   
   -- Detect faces, if needed
   local detectedFaces, detectedFace
   
   if fileList[i].scale == nil then
         
     detectedFaces = faceDetector:detect(img)      
-    if(#detectedFaces<1) then goto continue end -- When continue is missing
+    if(#detectedFaces<1) then 
+      print('********skip ',fileList[i].image)
+      goto continue 
+      end -- When continue is missing
     
     -- Compute only for the first face for now
     fileList[i].center, fileList[i].scale =	utils.get_normalisation(detectedFaces[1])
     detectedFace = detectedFaces[1]
         
   end
-  
   
   img = utils.crop(img, fileList[i].center, fileList[i].scale, 256):view(1,3,256,256)
     
@@ -74,30 +111,30 @@ for i = 1, #fileList do
   local preds_hm, preds_img = utils.getPreds(output, fileList[i].center, fileList[i].scale)
 
   preds_hm = preds_hm:view(68,2):float()*4
-    
-    
-  print("check for full 3D ")
-    
-  -- depth prediction
-  if opts.type == '3D-full' then
+  
+  --there is no need to save the output in the gpu now 
+  output = nil 
+  collectgarbage()
+  
+  --if limited gpu memory is true now it's the time to swap between 2D and 3D prediction models 
+  if opts.limitedGpuMemory=='true' and opts.type == '3D-full' and opts.device == 'gpu' then
     model = nil
     collectgarbage()
-    
-    local modelZ  
-    modelZ = torch.load(opts.modelZ)
-    if opts.device ~= 'cpu' then modelZ = modelZ:cuda() end
-    modelZ:evaluate()
-    
+    modelZ = (cpuMemoryModelZ:clone()):cuda()
+    modelZ:evaluate()    
     collectgarbage()
     
+  end
+  
+  --proceed to 3D depth prediction (if the gpu limited memory is false then the 3D prediction model would be already loaded at the gpu memory at initialize steps and the 2D model stay at its place)
+  -- depth prediction
+  if opts.type == '3D-full' then
     out = torch.zeros(68, 256, 256)
-    
     for i=1,68 do
       if preds_hm[i][1] > 0 then
           utils.drawGaussian(out[i], preds_hm[i], 2)
       end
     end
-    
     out = out:view(1,68,256,256)
     local inputZ = torch.cat(img:float(), out, 2)
 
@@ -108,12 +145,13 @@ for i = 1, #fileList do
     preds_hm = torch.cat(preds_hm, depth_pred, 2)
     preds_img = torch.cat(preds_img:view(68,2), depth_pred*(1/(256/(200*fileList[i].scale))),2)
     
+  end
+  
+  --put back the 2D prediction model and pop the 3D model
+  if opts.limitedGpuMemory=='true' and opts.type == '3D-full' and opts.device == 'gpu' then
     modelZ = nil
-    inputZ = nil
-    collectgarbage()
-    
-    model = torch.load(opts.model)
-    if opts.device == 'gpu' then model = model:cuda() end
+    collectgarbage()    
+    model = (cpuMemoryModel:clone()):cuda()
     model:evaluate()
   end
 
@@ -149,20 +187,20 @@ for i = 1, #fileList do
       end
       xlua.progress(i, #fileList)
   end
-	
+
   if opts.mode == 'eval' then
       predictions[i] = preds_img:clone() + 1.75
       xlua.progress(i,#fileList)
   end
 	
   collectgarbage();
-  ::continue::   
-end
 
+  ::continue::
+      
+end
 
 if opts.mode == 'eval' then
     predictions = torch.cat(predictions,1)
     local dists = utils.calcDistance(predictions,fileList)
     utils.calculateMetrics(dists)
 end
-
